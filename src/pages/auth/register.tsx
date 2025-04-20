@@ -5,20 +5,31 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
-import { Mail, Lock, User } from "lucide-react";
+import { Mail, Lock, User, Building, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError("");
+    
     // TODO: Add actual registration logic once Supabase is integrated
-    setTimeout(() => {
+    try {
+      // Simulating registration for now
+      setTimeout(() => {
+        toast.success("Account created successfully");
+        setIsLoading(false);
+        navigate("/dashboard");
+      }, 1000);
+    } catch (error) {
+      setError("An error occurred. Please try again.");
       setIsLoading(false);
-      navigate("/dashboard");
-    }, 1000);
+    }
   };
 
   return (
@@ -28,6 +39,12 @@ export default function RegisterPage() {
     >
       <div className="grid gap-6">
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="p-3 rounded-md bg-red-50 text-red-600 text-sm flex items-center">
+              <AlertCircle className="h-4 w-4 mr-2" />
+              {error}
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="name">Full Name</Label>
             <div className="relative">
@@ -35,6 +52,19 @@ export default function RegisterPage() {
               <Input
                 id="name"
                 placeholder="John Doe"
+                className="pl-10"
+                required
+                disabled={isLoading}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="company">Company Name</Label>
+            <div className="relative">
+              <Building className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+              <Input
+                id="company"
+                placeholder="Acme Inc."
                 className="pl-10"
                 required
                 disabled={isLoading}
@@ -67,6 +97,11 @@ export default function RegisterPage() {
                 disabled={isLoading}
               />
             </div>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            By clicking Create account, you agree to our 
+            <a href="/terms" className="text-purple-600 hover:text-purple-700 hover:underline"> Terms of Service</a> and 
+            <a href="/privacy" className="text-purple-600 hover:text-purple-700 hover:underline"> Privacy Policy</a>.
           </div>
           <Button 
             type="submit" 

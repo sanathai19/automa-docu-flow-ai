@@ -5,20 +5,37 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
-import { Mail, Lock } from "lucide-react";
+import { Mail, Lock, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError("");
+    
     // TODO: Add actual authentication logic once Supabase is integrated
-    setTimeout(() => {
+    try {
+      // Simulating authentication for now
+      setTimeout(() => {
+        if (email === "admin@automa.ai" && password === "password") {
+          toast.success("Successfully logged in");
+          navigate("/dashboard");
+        } else {
+          setError("Invalid email or password");
+        }
+        setIsLoading(false);
+      }, 1000);
+    } catch (error) {
+      setError("An error occurred. Please try again.");
       setIsLoading(false);
-      navigate("/dashboard");
-    }, 1000);
+    }
   };
 
   return (
@@ -28,8 +45,14 @@ export default function LoginPage() {
     >
       <div className="grid gap-6">
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="p-3 rounded-md bg-red-50 text-red-600 text-sm flex items-center">
+              <AlertCircle className="h-4 w-4 mr-2" />
+              {error}
+            </div>
+          )}
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Work Email</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
               <Input
@@ -38,12 +61,22 @@ export default function LoginPage() {
                 placeholder="name@company.com"
                 className="pl-10"
                 required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}
               />
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">Password</Label>
+              <a 
+                href="/auth/forgot-password" 
+                className="text-xs text-purple-600 hover:text-purple-700 hover:underline"
+              >
+                Forgot password?
+              </a>
+            </div>
             <div className="relative">
               <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
               <Input
@@ -51,6 +84,8 @@ export default function LoginPage() {
                 type="password"
                 className="pl-10"
                 required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
               />
             </div>
