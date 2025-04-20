@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
+import { Mail, Lock, User } from "lucide-react";
 
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -22,51 +23,79 @@ export default function RegisterPage() {
 
   return (
     <AuthLayout
-      title="Create an account"
-      description="Enter your details to create your account"
+      title="Create your Automa account"
+      description="Start automating your document processing"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">Full Name</Label>
-          <Input
-            id="name"
-            placeholder="John Doe"
-            required
+      <div className="grid gap-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Full Name</Label>
+            <div className="relative">
+              <User className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+              <Input
+                id="name"
+                placeholder="John Doe"
+                className="pl-10"
+                required
+                disabled={isLoading}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">Work Email</Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+              <Input
+                id="email"
+                type="email"
+                placeholder="name@company.com"
+                className="pl-10"
+                required
+                disabled={isLoading}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+              <Input
+                id="password"
+                type="password"
+                className="pl-10"
+                required
+                disabled={isLoading}
+              />
+            </div>
+          </div>
+          <Button 
+            type="submit" 
+            className="w-full bg-purple-600 hover:bg-purple-700"
             disabled={isLoading}
-          />
+          >
+            {isLoading ? "Creating account..." : "Create account"}
+          </Button>
+        </form>
+
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">
+              Already have an account?
+            </span>
+          </div>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="name@example.com"
-            required
-            disabled={isLoading}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            type="password"
-            required
-            disabled={isLoading}
-          />
-        </div>
+
         <Button 
-          type="submit" 
-          className="w-full bg-purple-600 hover:bg-purple-700"
-          disabled={isLoading}
+          variant="outline"
+          onClick={() => navigate("/auth/login")}
+          className="w-full"
         >
-          {isLoading ? "Creating account..." : "Create account"}
+          Sign in
         </Button>
-        <div className="text-center text-sm">
-          <a href="/auth/login" className="text-purple-600 hover:underline">
-            Already have an account? Sign in
-          </a>
-        </div>
-      </form>
+      </div>
     </AuthLayout>
   );
 }

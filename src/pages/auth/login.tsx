@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
+import { Mail, Lock } from "lucide-react";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -22,42 +23,66 @@ export default function LoginPage() {
 
   return (
     <AuthLayout
-      title="Welcome back"
-      description="Enter your credentials to access your account"
+      title="Welcome to Automa"
+      description="Intelligent document processing platform"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="name@example.com"
-            required
+      <div className="grid gap-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+              <Input
+                id="email"
+                type="email"
+                placeholder="name@company.com"
+                className="pl-10"
+                required
+                disabled={isLoading}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+              <Input
+                id="password"
+                type="password"
+                className="pl-10"
+                required
+                disabled={isLoading}
+              />
+            </div>
+          </div>
+          <Button 
+            type="submit" 
+            className="w-full bg-purple-600 hover:bg-purple-700"
             disabled={isLoading}
-          />
+          >
+            {isLoading ? "Signing in..." : "Sign in"}
+          </Button>
+        </form>
+        
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">
+              Don't have an account?
+            </span>
+          </div>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            type="password"
-            required
-            disabled={isLoading}
-          />
-        </div>
+
         <Button 
-          type="submit" 
-          className="w-full bg-purple-600 hover:bg-purple-700"
-          disabled={isLoading}
+          variant="outline" 
+          onClick={() => navigate("/auth/register")}
+          className="w-full"
         >
-          {isLoading ? "Signing in..." : "Sign in"}
+          Create Account
         </Button>
-        <div className="text-center text-sm">
-          <a href="/auth/register" className="text-purple-600 hover:underline">
-            Don't have an account? Sign up
-          </a>
-        </div>
-      </form>
+      </div>
     </AuthLayout>
   );
 }
