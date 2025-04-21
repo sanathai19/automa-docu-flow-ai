@@ -22,8 +22,6 @@ interface DocumentType {
     total: number;
     pending: number;
     approved: number;
-    upload_success: number;
-    upload_failed: number;
   };
 }
 
@@ -46,9 +44,6 @@ export default function DocumentTypesPage() {
           documents!left (
             id,
             status
-          ),
-          upload_logs!left (
-            status
           )
         `);
 
@@ -61,9 +56,7 @@ export default function DocumentTypesPage() {
         document_stats: {
           total: type.documents?.length || 0,
           pending: type.documents?.filter(d => d.status === "pending").length || 0,
-          approved: type.documents?.filter(d => d.status === "approved").length || 0,
-          upload_success: type.upload_logs?.filter(log => log.status === "success").length || 0,
-          upload_failed: type.upload_logs?.filter(log => log.status === "failed").length || 0
+          approved: type.documents?.filter(d => d.status === "approved").length || 0
         }
       })) as DocumentType[];
     },
@@ -150,20 +143,6 @@ export default function DocumentTypesPage() {
                         <p className="text-muted-foreground">Approved</p>
                         <p className="text-2xl font-bold text-green-600">
                           {type.document_stats.approved}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p className="text-muted-foreground">Upload Success</p>
-                        <p className="text-xl font-bold text-green-600">
-                          {type.document_stats.upload_success}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Upload Failed</p>
-                        <p className="text-xl font-bold text-red-600">
-                          {type.document_stats.upload_failed}
                         </p>
                       </div>
                     </div>
