@@ -9,6 +9,7 @@ import { FileUp, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { Progress } from "@/components/ui/progress";
 
 export default function UploadPage() {
   const navigate = useNavigate();
@@ -17,6 +18,7 @@ export default function UploadPage() {
   const documentTypeId = searchParams.get("type");
   const [isDragging, setIsDragging] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
   const [isUploading, setIsUploading] = useState(false);
 
   const { data: documentType } = useQuery({
@@ -36,44 +38,82 @@ export default function UploadPage() {
     enabled: !!documentTypeId,
   });
 
+  const createUploadLog = async (documentId: string, status: string, errorMessage?: string) => {
+    const { error } = await supabase
+      .from("upload_logs")
+      .insert({
+        user_id: user?.id,
+        document_id: documentId,
+        status,
+        error_message: errorMessage
+      });
+
+    if (error) {
+      console.error("Failed to create upload log:", error);
+    }
+  };
+
   const uploadFiles = async () => {
     if (!user || !documentTypeId) return;
 
     setIsUploading(true);
+    const results = { success: 0, failed: 0 };
     
     try {
       for (const file of files) {
-        const filePath = `${user.id}/${documentTypeId}/${file.name}`;
-        
-        // Upload file to storage
-        const { error: uploadError } = await supabase.storage
-          .from("documents")
-          .upload(filePath, file);
+        try {
+          const filePath = `${user.id}/${documentTypeId}/${file.name}`;
+          setUploadProgress(prev => ({ ...prev, [file.name]: 0 }));
+          
+          // Upload file to storage
+          const { error: uploadError } = await supabase.storage
+            .from("documents")
+            .upload(filePath, file, {
+              onUploadProgress: (progress) => {
+                const percent = (progress.loaded / progress.total) * 100;
+                setUploadProgress(prev => ({ ...prev, [file.name]: percent }));
+              }
+            });
 
-        if (uploadError) throw uploadError;
+          if (uploadError) throw uploadError;
 
-        // Create document record
-        const { error: insertError } = await supabase
-          .from("documents")
-          .insert({
-            user_id: user.id,
-            document_type_id: documentTypeId,
-            file_path: filePath,
-            file_name: file.name,
-            file_size: file.size,
-            mime_type: file.type,
-          });
+          // Create document record
+          const { data: document, error: insertError } = await supabase
+            .from("documents")
+            .insert({
+              user_id: user.id,
+              document_type_id: documentTypeId,
+              file_path: filePath,
+              file_name: file.name,
+              file_size: file.size,
+              mime_type: file.type,
+            })
+            .select()
+            .single();
 
-        if (insertError) throw insertError;
+          if (insertError) throw insertError;
+
+          // Create success log
+          await createUploadLog(document.id, 'success');
+          results.success++;
+
+        } catch (error) {
+          console.error("Upload error for file", file.name, ":", error);
+          results.failed++;
+          // Create failure log - note we don't have a document ID in this case
+          await createUploadLog(file.name, 'failed', error.message);
+        }
       }
 
-      toast.success(`${files.length} files uploaded successfully`);
+      toast.success(`Upload complete: ${results.success} succeeded, ${results.failed} failed`);
       navigate("/dashboard/all-documents");
     } catch (error) {
       console.error("Upload error:", error);
       toast.error("Failed to upload files");
     } finally {
       setIsUploading(false);
+      setFiles([]);
+      setUploadProgress({});
     }
   };
 
@@ -184,16 +224,21 @@ export default function UploadPage() {
             {files.length > 0 && (
               <div className="mt-6">
                 <h4 className="text-sm font-medium mb-3">Selected Files</h4>
-                <div className="space-y-2 max-h-60 overflow-y-auto">
+                <div className="space-y-3 max-h-60 overflow-y-auto">
                   {files.map((file, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
+                      className="space-y-2"
                     >
-                      <span className="text-sm truncate flex-1">{file.name}</span>
-                      <span className="text-xs text-gray-500 ml-4">
-                        {(file.size / 1024 / 1024).toFixed(2)} MB
-                      </span>
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                        <span className="text-sm truncate flex-1">{file.name}</span>
+                        <span className="text-xs text-gray-500 ml-4">
+                          {(file.size / 1024 / 1024).toFixed(2)} MB
+                        </span>
+                      </div>
+                      {uploadProgress[file.name] > 0 && (
+                        <Progress value={uploadProgress[file.name]} className="h-2" />
+                      )}
                     </div>
                   ))}
                 </div>

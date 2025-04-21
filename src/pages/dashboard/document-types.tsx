@@ -8,9 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FileText, Upload, Edit, MoreVertical, Eye, Download } from "lucide-react";
+import { FileText, Upload, MoreVertical } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,9 +18,13 @@ interface DocumentType {
   id: string;
   title: string;
   created_at: string;
-  documents: {
-    status: "pending" | "approved" | "rejected";
-  }[];
+  document_stats: {
+    total: number;
+    pending: number;
+    approved: number;
+    upload_success: number;
+    upload_failed: number;
+  };
 }
 
 export default function DocumentTypesPage() {
@@ -34,19 +37,35 @@ export default function DocumentTypesPage() {
   const { data: documentTypes = [], isLoading } = useQuery({
     queryKey: ["documentTypes"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: types, error } = await supabase
         .from("document_types")
         .select(`
           id,
           title,
           created_at,
-          documents (
+          documents!left (
+            id,
+            status
+          ),
+          upload_logs!left (
             status
           )
         `);
 
       if (error) throw error;
-      return data as DocumentType[];
+
+      return types.map(type => ({
+        id: type.id,
+        title: type.title,
+        created_at: type.created_at,
+        document_stats: {
+          total: type.documents?.length || 0,
+          pending: type.documents?.filter(d => d.status === "pending").length || 0,
+          approved: type.documents?.filter(d => d.status === "approved").length || 0,
+          upload_success: type.upload_logs?.filter(log => log.status === "success").length || 0,
+          upload_failed: type.upload_logs?.filter(log => log.status === "failed").length || 0
+        }
+      })) as DocumentType[];
     },
   });
 
@@ -118,19 +137,33 @@ export default function DocumentTypesPage() {
                   <div className="space-y-2">
                     <div className="grid grid-cols-3 gap-4 text-sm">
                       <div>
-                        <p className="text-muted-foreground">Uploaded</p>
-                        <p className="text-2xl font-bold">{type.documents?.length || 0}</p>
+                        <p className="text-muted-foreground">Total Files</p>
+                        <p className="text-2xl font-bold">{type.document_stats.total}</p>
                       </div>
                       <div>
-                        <p className="text-muted-foreground">Pending</p>
+                        <p className="text-muted-foreground">Pending Review</p>
                         <p className="text-2xl font-bold text-yellow-600">
-                          {type.documents?.filter(d => d.status === "pending").length || 0}
+                          {type.document_stats.pending}
                         </p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Approved</p>
                         <p className="text-2xl font-bold text-green-600">
-                          {type.documents?.filter(d => d.status === "approved").length || 0}
+                          {type.document_stats.approved}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Upload Success</p>
+                        <p className="text-xl font-bold text-green-600">
+                          {type.document_stats.upload_success}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Upload Failed</p>
+                        <p className="text-xl font-bold text-red-600">
+                          {type.document_stats.upload_failed}
                         </p>
                       </div>
                     </div>
