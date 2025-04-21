@@ -1,25 +1,27 @@
 
-import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { FileUp, Upload } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { Progress } from "@/components/ui/progress";
+import { DropZone } from "@/components/upload/DropZone";
+import { FileList } from "@/components/upload/FileList";
+import { useFileUpload } from "@/hooks/useFileUpload";
 
 export default function UploadPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const documentTypeId = searchParams.get("type");
-  const [isDragging, setIsDragging] = useState(false);
-  const [files, setFiles] = useState<File[]>([]);
-  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
-  const [isUploading, setIsUploading] = useState(false);
+
+  const {
+    files,
+    setFiles,
+    isUploading,
+    uploadProgress,
+    uploadFiles
+  } = useFileUpload(documentTypeId);
 
   const { data: documentType } = useQuery({
     queryKey: ["documentType", documentTypeId],
@@ -37,107 +39,6 @@ export default function UploadPage() {
     },
     enabled: !!documentTypeId,
   });
-
-  const createUploadLog = async (documentId: string, status: string, errorMessage?: string) => {
-    const { error } = await supabase
-      .from("upload_logs")
-      .insert({
-        user_id: user?.id,
-        document_id: documentId,
-        status,
-        error_message: errorMessage
-      });
-
-    if (error) {
-      console.error("Failed to create upload log:", error);
-    }
-  };
-
-  const uploadFiles = async () => {
-    if (!user || !documentTypeId) return;
-
-    setIsUploading(true);
-    const results = { success: 0, failed: 0 };
-    
-    try {
-      for (const file of files) {
-        try {
-          const filePath = `${user.id}/${documentTypeId}/${file.name}`;
-          setUploadProgress(prev => ({ ...prev, [file.name]: 0 }));
-          
-          // Upload file to storage
-          const { error: uploadError } = await supabase.storage
-            .from("documents")
-            .upload(filePath, file, {
-              onUploadProgress: (progress) => {
-                const percent = (progress.loaded / progress.total) * 100;
-                setUploadProgress(prev => ({ ...prev, [file.name]: percent }));
-              }
-            });
-
-          if (uploadError) throw uploadError;
-
-          // Create document record
-          const { data: document, error: insertError } = await supabase
-            .from("documents")
-            .insert({
-              user_id: user.id,
-              document_type_id: documentTypeId,
-              file_path: filePath,
-              file_name: file.name,
-              file_size: file.size,
-              mime_type: file.type,
-            })
-            .select()
-            .single();
-
-          if (insertError) throw insertError;
-
-          // Create success log
-          await createUploadLog(document.id, 'success');
-          results.success++;
-
-        } catch (error) {
-          console.error("Upload error for file", file.name, ":", error);
-          results.failed++;
-          // Create failure log - note we don't have a document ID in this case
-          await createUploadLog(file.name, 'failed', error.message);
-        }
-      }
-
-      toast.success(`Upload complete: ${results.success} succeeded, ${results.failed} failed`);
-      navigate("/dashboard/all-documents");
-    } catch (error) {
-      console.error("Upload error:", error);
-      toast.error("Failed to upload files");
-    } finally {
-      setIsUploading(false);
-      setFiles([]);
-      setUploadProgress({});
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    
-    const droppedFiles = Array.from(e.dataTransfer.files);
-    setFiles((prev) => [...prev, ...droppedFiles]);
-  };
-
-  const handleBrowseClick = () => {
-    document.getElementById('file-upload')?.click();
-  };
 
   const handleUpload = () => {
     if (files.length === 0) {
@@ -187,79 +88,13 @@ export default function UploadPage() {
 
         <Card>
           <CardContent className="pt-6">
-            <div
-              className={`border-2 border-dashed rounded-lg p-12 text-center ${
-                isDragging ? "border-purple-500 bg-purple-50" : "border-gray-300"
-              }`}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-            >
-              <FileUp className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-xl font-semibold mb-2">
-                Drag and drop your files here
-              </h3>
-              <p className="text-sm text-gray-500 mb-4">
-                or click to browse from your computer
-              </p>
-              <Button 
-                variant="outline" 
-                onClick={handleBrowseClick}
-              >
-                Browse Files
-              </Button>
-              <input 
-                id="file-upload"
-                type="file" 
-                multiple 
-                className="hidden"
-                onChange={(e) => {
-                  if (e.target.files) {
-                    setFiles((prev) => [...prev, ...Array.from(e.target.files!)]);
-                  }
-                }}
-              />
-            </div>
-
-            {files.length > 0 && (
-              <div className="mt-6">
-                <h4 className="text-sm font-medium mb-3">Selected Files</h4>
-                <div className="space-y-3 max-h-60 overflow-y-auto">
-                  {files.map((file, index) => (
-                    <div
-                      key={index}
-                      className="space-y-2"
-                    >
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                        <span className="text-sm truncate flex-1">{file.name}</span>
-                        <span className="text-xs text-gray-500 ml-4">
-                          {(file.size / 1024 / 1024).toFixed(2)} MB
-                        </span>
-                      </div>
-                      {uploadProgress[file.name] > 0 && (
-                        <Progress value={uploadProgress[file.name]} className="h-2" />
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-4 flex justify-end">
-                  <Button 
-                    className="bg-purple-600 hover:bg-purple-700"
-                    disabled={isUploading}
-                    onClick={handleUpload}
-                  >
-                    {isUploading ? (
-                      "Uploading..."
-                    ) : (
-                      <>
-                        <Upload className="mr-2 h-4 w-4" />
-                        Upload {files.length} {files.length === 1 ? 'file' : 'files'}
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            )}
+            <DropZone onFilesAdded={files => setFiles(prev => [...prev, ...files])} />
+            <FileList 
+              files={files}
+              uploadProgress={uploadProgress}
+              isUploading={isUploading}
+              onUpload={handleUpload}
+            />
           </CardContent>
         </Card>
       </div>
