@@ -12,21 +12,6 @@ export const useFileUpload = (documentTypeId: string | null) => {
   const [files, setFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
 
-  const createUploadLog = async (documentId: string, status: string, errorMessage?: string) => {
-    const { error } = await supabase
-      .from("upload_logs")
-      .insert({
-        user_id: user?.id,
-        document_id: documentId,
-        status,
-        error_message: errorMessage
-      });
-
-    if (error) {
-      console.error("Failed to create upload log:", error);
-    }
-  };
-
   const uploadFiles = async () => {
     if (!user || !documentTypeId) return;
 
@@ -60,14 +45,12 @@ export const useFileUpload = (documentTypeId: string | null) => {
 
           if (insertError) throw insertError;
 
-          await createUploadLog(document.id, 'success');
           results.success++;
           setUploadProgress(prev => ({ ...prev, [file.name]: 100 }));
 
         } catch (error) {
           console.error("Upload error for file", file.name, ":", error);
           results.failed++;
-          await createUploadLog(file.name, 'failed', error.message);
         }
       }
 
