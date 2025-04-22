@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
 import { Mail, Lock, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -20,20 +21,22 @@ export default function LoginPage() {
     setIsLoading(true);
     setError("");
     
-    // TODO: Add actual authentication logic once Supabase is integrated
     try {
-      // Simulating authentication for now
-      setTimeout(() => {
-        if (email === "admin@automa.ai" && password === "password") {
-          toast.success("Successfully logged in");
-          navigate("/dashboard");
-        } else {
-          setError("Invalid email or password");
-        }
-        setIsLoading(false);
-      }, 1000);
-    } catch (error) {
-      setError("An error occurred. Please try again.");
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast.success("Successfully logged in");
+      navigate("/dashboard");
+    } catch (error: any) {
+      setError(error.message || "An error occurred. Please try again.");
+      console.error("Login error:", error);
+    } finally {
       setIsLoading(false);
     }
   };
