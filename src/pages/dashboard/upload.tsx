@@ -1,4 +1,3 @@
-
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -9,10 +8,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { DropZone } from "@/components/upload/DropZone";
 import { FileList } from "@/components/upload/FileList";
 import { useFileUpload } from "@/hooks/useFileUpload";
+import { AddDocumentTypeDialog } from "@/components/document-type/AddDocumentTypeDialog";
+import { useState } from "react";
 
 export default function UploadPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const documentTypeId = searchParams.get("type");
 
   const {
@@ -62,11 +64,15 @@ export default function UploadPage() {
             Please select a document type first
           </h2>
           <Button
-            onClick={() => navigate("/dashboard/document-types")}
+            onClick={() => setIsAddDialogOpen(true)}
             className="bg-purple-600 hover:bg-purple-700"
           >
-            Go to Document Types
+            Add Document Type
           </Button>
+          <AddDocumentTypeDialog 
+            open={isAddDialogOpen} 
+            onOpenChange={setIsAddDialogOpen}
+          />
         </div>
       </DashboardLayout>
     );
