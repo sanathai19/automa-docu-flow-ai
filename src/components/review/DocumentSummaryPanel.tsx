@@ -64,6 +64,14 @@ export function DocumentSummaryPanel({
     toast.info("Delete functionality not implemented in MVP");
   };
 
+  const handleNavigateToLineItems = () => {
+    // Find the line items tab trigger and programmatically click it
+    const lineItemsTab = document.querySelector('[data-value="line-items"]') as HTMLElement;
+    if (lineItemsTab) {
+      lineItemsTab.click();
+    }
+  };
+
   return (
     <Card className="h-full">
       <CardHeader className="pb-3">
@@ -147,7 +155,7 @@ export function DocumentSummaryPanel({
           <h3 className="text-sm font-semibold mb-2">Line Items</h3>
           <div 
             className="bg-muted rounded-md p-3 cursor-pointer hover:bg-muted/70 transition-colors"
-            onClick={() => document.querySelector('[data-value="line-items"]')?.click()}
+            onClick={handleNavigateToLineItems}
           >
             <div className="flex justify-between items-center">
               <span className="text-sm">View Line Items</span>

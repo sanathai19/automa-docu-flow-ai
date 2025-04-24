@@ -49,7 +49,7 @@ export default function DashboardPage() {
       setIsDialogOpen(false);
       toast.success(`Document type "${selectedDocType}" created successfully`);
       
-      // Redirect to review page instead of document types
+      // Redirect to review page 
       navigate(`/dashboard/review/${selectedDocType}`);
     }, 1500);
   };

@@ -1,30 +1,14 @@
 
 import { useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { 
   Card, 
   CardContent 
 } from "@/components/ui/card";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   CheckCircle,
-  AlertTriangle,
   ArrowLeft,
-  Save,
-  Download,
-  Edit,
-  Share,
-  Trash2,
-  Plus,
   ZoomIn,
   ZoomOut,
   ChevronLeft,
@@ -166,7 +150,7 @@ export default function ReviewPage() {
   const fileName = "1.pdf";
 
   return (
-    <DashboardLayout>
+    <div className="min-h-screen bg-background p-6">
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -273,6 +257,6 @@ export default function ReviewPage() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+    </div>
   );
 }
