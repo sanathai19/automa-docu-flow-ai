@@ -98,6 +98,11 @@ export default function AddDocumentTypePage() {
       }
       
       toast.success(`${selectedFiles.length} files uploaded successfully`);
+      
+      // Redirect to review page
+      if (activeDocType) {
+        navigate(`/dashboard/review/${activeDocType}`);
+      }
     }, 1500);
   };
 

@@ -47,7 +47,8 @@ export default function UploadPage() {
     setTimeout(() => {
       setIsUploading(false);
       toast.success(`${files.length} files uploaded successfully`);
-      navigate("/dashboard/all-documents");
+      // Redirect to review page instead of all documents
+      navigate("/dashboard/review/invoices");
     }, 1500);
   };
 
